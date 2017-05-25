@@ -11,6 +11,7 @@ namespace Piksel.Serialization
         public const ushort Dash = 0xFFF;
         public const byte SignedOffset = 200;
         public const ushort SignedIntOffset = 2000;
+        public const long DateTimeOffset = 100000;
 
         #region Float syllable helpers
 
@@ -20,13 +21,13 @@ namespace Piksel.Serialization
         public static ushort Syllable(this float value, int offset = 0)
             => Syllable((double)value, offset);
 
-        public static float? GetFloat(ushort value, int offset = 0)
-            => value != Dash ? new float?(((float)value / 10) + offset) : new float?();
+        public static float? GetFloat(long value, int offset = 0)
+            => value != Dash ? ((float)value / 10) + offset : new float?();
 
         public static ushort SignedSyllable(this float? value)
             => Syllable(value, -SignedOffset);
 
-        public static float? GetSignedFloat(ushort value)
+        public static float? GetSignedFloat(long value)
             => GetFloat(value, -SignedOffset);
 
         #endregion
@@ -39,8 +40,8 @@ namespace Piksel.Serialization
         public static ushort Syllable(this double value, int offset = 0)
             => (ushort)((value - offset) * 10);
 
-        public static double? GetDouble(ushort value, int offset = 0)
-            => (value != Dash) ? new double?(((double)value / 10) + offset) : new double?();
+        public static double? GetDouble(long value, int offset = 0)
+            => (value != Dash) ? ((double)value / 10) + offset : new double?();
 
         public static ushort SignedSyllable(this double? value)
             => Syllable(value, -SignedOffset);
@@ -48,7 +49,7 @@ namespace Piksel.Serialization
         public static ushort SignedSyllable(this double value)
             => Syllable(value, -SignedOffset);
 
-        public static double? GetSignedDouble(ushort value)
+        public static double? GetSignedDouble(long value)
             => GetDouble(value, -SignedOffset);
 
         #endregion
@@ -61,8 +62,8 @@ namespace Piksel.Serialization
         public static ushort Syllable(this decimal value, int offset = 0)
             => (ushort)((value - offset) * 10);
 
-        public static decimal? GetDecimal(ushort value, int offset = 0)
-            => value != Dash ? new decimal?(((decimal)value / 10) + offset) : new decimal?();
+        public static decimal? GetDecimal(long value, int offset = 0)
+            => value != Dash ? ((decimal)value / 10) + offset : new decimal?();
 
         public static ushort SignedSyllable(this decimal? value)
             => Syllable(value, -SignedOffset);
@@ -70,7 +71,7 @@ namespace Piksel.Serialization
         public static ushort SignedSyllable(this decimal value)
             => Syllable(value, -SignedOffset);
 
-        public static decimal? GetSignedDecimal(ushort value)
+        public static decimal? GetSignedDecimal(long value)
             => GetDecimal(value, -SignedOffset);
 
         #endregion
@@ -83,14 +84,24 @@ namespace Piksel.Serialization
         public static ushort Syllable(this int value, int offset = 0)
             => (ushort)(value - offset);
 
-        public static int? GetInteger(ushort value, int offset = 0)
-            => value + offset;
+        public static int? GetInteger(long value, int offset = 0)
+            => value != Dash ? (int)value + offset : new int?();
 
         public static ushort SignedSyllable(this int? value)
             => Syllable(value, -SignedIntOffset);
 
-        public static int? GetSignedInteger(ushort value)
+        public static int? GetSignedInteger(long value)
             => GetInteger(value, -SignedIntOffset);
+
+        #endregion
+
+        #region DateTime helpers
+
+        public static long Syllables(this DateTime? value)
+            => value.HasValue ? (value.Value.Ticks / DateTimeOffset) : Dash;
+
+        public static DateTime? GetDateTime(long value)
+            => value != Dash ? new DateTime(value * DateTimeOffset) : new DateTime?();
 
         #endregion
     }
@@ -99,58 +110,100 @@ namespace Piksel.Serialization
     {
         private List<byte> buffer = new List<byte>();
         private int cursor = 0;
-        private ushort halfTriplet;
+        private bool halfTriplet = false;
+        private ushort halfSyllable;
 
-        private List<Func<T, ushort>> getters = new List<Func<T, ushort>>();
-        private List<Action<T, ushort>> setters = new List<Action<T, ushort>>();
+        private List<Func<T, long>> getters = new List<Func<T, long>>();
+        private List<Action<T, long>> setters = new List<Action<T, long>>();
+        private List<byte> sizes = new List<byte>();
 
-        public SyllablePacker<T> AddProperty(Func<T, ushort> getter, Action<T, ushort> setter)
+        public SyllablePacker<T> AddProperty(Func<T, long> getter, Action<T, long> setter, byte size = 1)
         {
             getters.Add(getter);
             setters.Add(setter);
+            sizes.Add(size);
             return this;
         }
 
         public byte[] Pack(T target)
         {
+            halfTriplet = false;
+
             for (var i = 0; i < getters.Count; i++)
             {
-                var syllable = getters[i](target);
-                if ((i & 1) == 1)
+                var syllables = splitSyllables(getters[i](target), sizes[i]);
+                for (var si = 0; si < syllables.Length; si++)
                 {
-                    var triplet = packTriplet(halfTriplet, syllable);
-                    buffer.AddRange(triplet);
-                }
-                else
-                {
-                    if (i < getters.Count - 1)
-                        halfTriplet = syllable;
+                    if (halfTriplet)
+                    {
+                        var triplet = packTriplet(halfSyllable, syllables[si]);
+                        buffer.AddRange(triplet);
+                        halfTriplet = false;
+                    }
                     else
-                        buffer.AddRange(packTriplet(syllable, 0));
+                    {
+                        if (i < getters.Count - 1 || si < syllables.Length - 1)
+                        {
+                            halfSyllable = syllables[si];
+                            halfTriplet = true;
+                        }
+                        else
+                            buffer.AddRange(packTriplet(syllables[si], 0));
+                    }
                 }
             }
 
             return buffer.ToArray();
         }
 
+        private ushort[] splitSyllables(long value, byte size)
+        {
+            var syllables = new ushort[size];
+
+            for (int i = 0; i < size; i++)
+                syllables[size - (i + 1)] = (ushort)((value >> i * 12) & 0xfff);
+
+            return syllables;
+        }
+
+        private long combineSyllables(ushort[] syllables, byte size)
+        {
+            long value = 0;
+
+            for (int i = 0; i < size; i++)
+                value |= (long)syllables[size - (i + 1)] << (i * 12);
+
+            return value;
+        }
+
         public T Unpack(byte[] bytes)
         {
             var target = new T();
             cursor = 0;
+            halfTriplet = false;
             for (var i = 0; i < setters.Count; i++)
             {
-                if ((i & 1) == 0)
+                var syllables = new ushort[sizes[i]];
+                for (int si = 0; si < sizes[i]; si++)
                 {
-                    var triplet = new byte[] { bytes[cursor], bytes[cursor + 1], bytes[cursor + 2] };
-                    cursor += 3;
-                    var syllables = unpackTriplet(triplet);
-                    setters[i](target, syllables.Item1);
-                    halfTriplet = syllables.Item2;
+
+                    if (halfTriplet)
+                    {
+                        syllables[si] = halfSyllable;
+                        halfTriplet = false;
+                    }
+                    else
+                    {
+                        var triplet = new byte[] { bytes[cursor], bytes[cursor + 1], bytes[cursor + 2] };
+                        cursor += 3;
+                        var syllablePair = unpackTriplet(triplet);
+                        syllables[si] = syllablePair.Item1;
+                        halfSyllable = syllablePair.Item2;
+                        halfTriplet = true;
+                    }
                 }
-                else
-                {
-                    setters[i](target, halfTriplet);
-                }
+
+                setters[i](target, combineSyllables(syllables, sizes[i]));
 
             }
             return target;
