@@ -66,6 +66,6 @@ var post = packer.Unpack(bytes);
 The packed bytes would be:  
 ```14 f7 d1 ff f0 00 4e 1b e9 ff e0 00```
 
-Grouping per three nibbles (12 bit) yields:
+Grouping per three nibbles (12 bit) yields:  
 ```14f 7d1 fff 000 4e1 be9 ffe 000```  
 _Note that the last padding nibbles, ``000``_
