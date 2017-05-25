@@ -13,7 +13,7 @@ Value constraints:
 | Unsigned Integer  |      0    | 4094      |
 | Signed Integer    |  -2000    | 2094      | 
 
-The standard storage type, _Syllable_, uses a single decimal place of precision.
+The standard storage type, _Syllable_, uses a single decimal place of precision.  
 Null values are stored as `0xFFF`, non-nullable values should avoid using this value (`4095` decimal).
 
 ## Example
@@ -54,14 +54,18 @@ var packer = new SyllablePacker<ExampleClass>()
         (o, v) => o.DecimalValue = SyllablePacker.GetDecimal(v).Value)
      .AddProperty(
         o => o.Large.HasValue ? o.Large.Value : SyllablePacker.Dash,
-        (o, v) => o.Large = v == SyllablePacker.Dash ? new ushort?() : new ushort?(v)
-     );
+        (o, v) => o.Large = v == SyllablePacker.Dash ? new ushort?() : new ushort?(v));
         
 // Pack into bytes
 var bytes = packer.Pack(pre);
 
-// bytes => 14 f7 d1 ff f0 00 4e 1b e9 ff e0 00
-
 // Unpack into object
 var post = packer.Unpack(bytes);
 ```
+
+The packed bytes would be:  
+```14 f7 d1 ff f0 00 4e 1b e9 ff e0 00```
+
+Grouping per three nibbles (12 bit) yields:
+```14f 7d1 fff 000 4e1 be9 ffe 000```  
+_Note that the last padding nibbles, ``000``_
