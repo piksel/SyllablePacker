@@ -1,15 +1,20 @@
 # SyllablePacker
 
-Pack floats in 12-bit chunks
+Pack numbers in 12-bit chunks
 
-The standard storage type, _Syllable_, uses a single decimal place of precision and has the following constraints:
 
-| Type            | Min value | Max value |
-| --------------- | --------- | --------- |
-| Unsigned        |    0.0    | 409.4     |
-| Signed          | -200.0    | 209.4     | 
 
-Null values are stored as `0xFFF`
+Value constraints:
+
+| Type              | Min value | Max value |
+| ----------------- | --------- | --------- |
+| Unsigned Syllable |      0.0  |  409.4    |
+| Signed Syllable   |   -200.0  |  209.4    | 
+| Unsigned Integer  |      0    | 4094      |
+| Signed Integer    |  -2000    | 2094      | 
+
+The standard storage type, _Syllable_, uses a single decimal place of precision.
+Null values are stored as `0xFFF`, non-nullable values should avoid using this value (`4095` decimal).
 
 ## Example
 
@@ -18,33 +23,44 @@ Null values are stored as `0xFFF`
 // Create a example object
 var pre = new ExampleClass()
 {
-    FloatVal1 = 33.5f,
-    FloatVal2 = 200.1f,
-    Nullable = null,
+    FloatValue = 33.5f,
+    DoubleValue = 200.1f,
+    DecimalValue = 304.9m,
+    Null = null,
     Zero = 0,
-    Signed = -75.1f
+    Signed = -75.1f,
+    Large = 4094
 };
 
 // Initialize the packer
 var packer = new SyllablePacker<ExampleClass>()
     .AddProperty(
-        o => o.FloatVal1.Syllable(),
-        (o, v) => o.FloatVal1 = SyllablePacker.GetFloat(v).Value)
+        o => o.FloatValue.Syllable(),
+        (o, v) => o.FloatValue = SyllablePacker.GetFloat(v).Value)
     .AddProperty(
-        o => o.FloatVal2.Syllable(),
-        (o, v) => o.FloatVal2 = SyllablePacker.GetFloat(v).Value)
+        o => o.DoubleValue.Syllable(),
+        (o, v) => o.DoubleValue = SyllablePacker.GetFloat(v).Value)
     .AddProperty(
-        o => o.Nullable.Syllable(),
-        (o, v) => o.Nullable = SyllablePacker.GetFloat(v))
+        o => o.Null.Syllable(),
+        (o, v) => o.Null = SyllablePacker.GetFloat(v))
     .AddProperty(
         o => o.Zero.Syllable(),
         (o, v) => o.Zero = SyllablePacker.GetFloat(v).Value)
     .AddProperty(
         o => o.Signed.SignedSyllable(),
-        (o, v) => o.Signed = SyllablePacker.GetSignedFloat(v).Value);
+        (o, v) => o.Signed = SyllablePacker.GetSignedFloat(v).Value)
+    .AddProperty(
+        o => o.DecimalValue.Syllable(),
+        (o, v) => o.DecimalValue = SyllablePacker.GetDecimal(v).Value)
+     .AddProperty(
+        o => o.Large.HasValue ? o.Large.Value : SyllablePacker.Dash,
+        (o, v) => o.Large = v == SyllablePacker.Dash ? new ushort?() : new ushort?(v)
+     );
         
 // Pack into bytes
 var bytes = packer.Pack(pre);
+
+// bytes => 14 f7 d1 ff f0 00 4e 1b e9 ff e0 00
 
 // Unpack into object
 var post = packer.Unpack(bytes);
