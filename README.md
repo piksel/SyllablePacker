@@ -36,27 +36,27 @@ var pre = new ExampleClass()
 // Initialize the packer
 var packer = new SyllablePacker<ExampleClass>()
     .AddProperty(o => o.FloatValue.Syllable(),
-        (o, v) => o.FloatValue = SyllablePacker.GetFloat(v).Value)
+            (o, v) => o.FloatValue = SyllablePacker.GetFloat(v).Value)
     .AddProperty(o => o.DoubleValue.Syllable(),
-        (o, v) => o.DoubleValue = SyllablePacker.GetFloat(v).Value)
+            (o, v) => o.DoubleValue = SyllablePacker.GetFloat(v).Value)
     .AddProperty(o => o.Null.Syllable(),                  
-        (o, v) => o.Null = SyllablePacker.GetFloat(v))
+            (o, v) => o.Null = SyllablePacker.GetFloat(v))
     .AddProperty(o => o.Zero.Syllable(),                  
-        (o, v) => o.Zero = SyllablePacker.GetFloat(v).Value)
+            (o, v) => o.Zero = SyllablePacker.GetFloat(v).Value)
     .AddProperty(o => o.Signed.SignedSyllable(),          
-        (o, v) => o.Signed = SyllablePacker.GetSignedFloat(v).Value)
+            (o, v) => o.Signed = SyllablePacker.GetSignedFloat(v).Value)
     .AddProperty(o => o.DecimalValue.Syllable(),          
-        (o, v) => o.DecimalValue = SyllablePacker.GetDecimal(v).Value)
+            (o, v) => o.DecimalValue = SyllablePacker.GetDecimal(v).Value)
     .AddProperty(o => o.Large.GetValueOrDefault(SyllablePacker.Dash), 
-        (o, v) => o.Large = v != SyllablePacker.Dash ? (ushort)v : new ushort?())
+            (o, v) => o.Large = v != SyllablePacker.Dash ? (ushort)v : new ushort?())
     
     // Larger uses two 12-bit values
     .AddProperty(o => o.Larger.GetValueOrDefault(SyllablePacker.Dash),
-        (o, v) => o.Larger = v != SyllablePacker.Dash ? v : new long?(), 2)
+            (o, v) => o.Larger = v != SyllablePacker.Dash ? v : new long?(), 2)
     
     // Time uses four 12-bit values
     .AddProperty( o => o.Time.Syllables(),
-        (o, v) => o.Time = SyllablePacker.GetDateTime(v), 4);
+             (o, v) => o.Time = SyllablePacker.GetDateTime(v), 4);
     
 // Pack into bytes
 var bytes = packer.Pack(pre);
