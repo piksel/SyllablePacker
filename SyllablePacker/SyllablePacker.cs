@@ -9,28 +9,90 @@ namespace Piksel.Serialization
     public static class SyllablePacker
     {
         public const ushort Dash = 0xFFF;
+        public const byte SignedOffset = 200;
+        public const ushort SignedIntOffset = 2000;
+
+        #region Float syllable helpers
 
         public static ushort Syllable(this float? value, int offset = 0)
             => value.HasValue ? Syllable(value.Value, offset) : Dash;
 
         public static ushort Syllable(this float value, int offset = 0)
-            => (ushort)((value - offset) * 10);
+            => Syllable((double)value, offset);
 
         public static float? GetFloat(ushort value, int offset = 0)
-        {
-            if (value != Dash)
-                return ((float)value / 10) + offset;
-            return null;
-        }
+            => value != Dash ? new float?(((float)value / 10) + offset) : new float?();
 
         public static ushort SignedSyllable(this float? value)
-            => Syllable(value, -200);
-
-        public static ushort SignedSyllable(this float value)
-            => Syllable(value, -200);
+            => Syllable(value, -SignedOffset);
 
         public static float? GetSignedFloat(ushort value)
-            => GetFloat(value, -200);
+            => GetFloat(value, -SignedOffset);
+
+        #endregion
+
+        #region Double syllable helpers
+
+        public static ushort Syllable(this double? value, int offset = 0)
+            => value.HasValue ? Syllable(value.Value, offset) : Dash;
+
+        public static ushort Syllable(this double value, int offset = 0)
+            => (ushort)((value - offset) * 10);
+
+        public static double? GetDouble(ushort value, int offset = 0)
+            => (value != Dash) ? new double?(((double)value / 10) + offset) : new double?();
+
+        public static ushort SignedSyllable(this double? value)
+            => Syllable(value, -SignedOffset);
+
+        public static ushort SignedSyllable(this double value)
+            => Syllable(value, -SignedOffset);
+
+        public static double? GetSignedDouble(ushort value)
+            => GetDouble(value, -SignedOffset);
+
+        #endregion
+
+        #region Decimal syllable helpers
+
+        public static ushort Syllable(this decimal? value, int offset = 0)
+            => value.HasValue ? Syllable(value.Value, offset) : Dash;
+
+        public static ushort Syllable(this decimal value, int offset = 0)
+            => (ushort)((value - offset) * 10);
+
+        public static decimal? GetDecimal(ushort value, int offset = 0)
+            => value != Dash ? new decimal?(((decimal)value / 10) + offset) : new decimal?();
+
+        public static ushort SignedSyllable(this decimal? value)
+            => Syllable(value, -SignedOffset);
+
+        public static ushort SignedSyllable(this decimal value)
+            => Syllable(value, -SignedOffset);
+
+        public static decimal? GetSignedDecimal(ushort value)
+            => GetDecimal(value, -SignedOffset);
+
+        #endregion
+
+        #region Integer syllable helpers
+
+        public static ushort Syllable(this int? value, int offset = 0)
+            => value.HasValue ? (ushort)(value.Value - offset) : Dash;
+
+        public static ushort Syllable(this int value, int offset = 0)
+            => (ushort)(value - offset);
+
+        public static int? GetInteger(ushort value, int offset = 0)
+            => value + offset;
+
+        public static ushort SignedSyllable(this int? value)
+            => Syllable(value, -SignedIntOffset);
+
+        public static int? GetSignedInteger(ushort value)
+            => GetInteger(value, -SignedIntOffset);
+
+        #endregion
     }
 
     public class SyllablePacker<T> where T : new()

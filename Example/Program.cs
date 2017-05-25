@@ -15,28 +15,37 @@ namespace Example
 
             var packer = new SyllablePacker<ExampleClass>()
                 .AddProperty(
-                    o => o.FloatVal1.Syllable(),
-                    (o, v) => o.FloatVal1 = SyllablePacker.GetFloat(v).Value)
+                    o => o.FloatValue.Syllable(),
+                    (o, v) => o.FloatValue = SyllablePacker.GetFloat(v).Value)
                 .AddProperty(
-                    o => o.FloatVal2.Syllable(),
-                    (o, v) => o.FloatVal2 = SyllablePacker.GetFloat(v).Value)
+                    o => o.DoubleValue.Syllable(),
+                    (o, v) => o.DoubleValue = SyllablePacker.GetFloat(v).Value)
                 .AddProperty(
-                    o => o.Nullable.Syllable(),
-                    (o, v) => o.Nullable = SyllablePacker.GetFloat(v))
+                    o => o.Null.Syllable(),
+                    (o, v) => o.Null = SyllablePacker.GetFloat(v))
                 .AddProperty(
                     o => o.Zero.Syllable(),
                     (o, v) => o.Zero = SyllablePacker.GetFloat(v).Value)
                 .AddProperty(
                     o => o.Signed.SignedSyllable(),
-                    (o, v) => o.Signed = SyllablePacker.GetSignedFloat(v).Value);
+                    (o, v) => o.Signed = SyllablePacker.GetSignedFloat(v).Value)
+                .AddProperty(
+                    o => o.DecimalValue.Syllable(),
+                    (o, v) => o.DecimalValue = SyllablePacker.GetDecimal(v).Value)
+                 .AddProperty(
+                    o => o.Large.HasValue ? o.Large.Value : SyllablePacker.Dash,
+                    (o, v) => o.Large = v == SyllablePacker.Dash ? new ushort?() : new ushort?(v)
+                 );
 
             var pre = new ExampleClass()
             {
-                FloatVal1 = 33.5f,
-                FloatVal2 = 200.1f,
-                Nullable = null,
+                FloatValue = 33.5f,
+                DoubleValue = 200.1f,
+                DecimalValue = 304.9m,
+                Null = null,
                 Zero = 0,
-                Signed = -75.1f
+                Signed = -75.1f,
+                Large = 4094
             };
 
             Console.WriteLine($"Pre pack:\n{pre}\n");
