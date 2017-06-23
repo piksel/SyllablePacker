@@ -128,6 +128,7 @@ namespace Piksel.Serialization
         public byte[] Pack(T target)
         {
             halfTriplet = false;
+            buffer.Clear();
 
             for (var i = 0; i < getters.Count; i++)
             {
