@@ -19,7 +19,7 @@ Null values are stored as `0xFFF`, non-nullable values should avoid using this v
 ## Example
 
 ```.cs
-// Create a example object
+// Create an example object
 var pre = new ExampleClass()
 {
     FloatValue = 33.5f,
